@@ -10,3 +10,5 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::post('/add-products', [ProductController::class, 'store']);
 Route::get('/logs', [InventoryLogController::class, 'index']);
 Route::post('/add-logs', [InventoryLogController::class, 'store']);
+Route::put('/update-product/{id}', [ProductController::class, 'update']);
+Route::delete('/delete-product/{id}', [ProductController::class, 'destroy']);
