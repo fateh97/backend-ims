@@ -11,7 +11,7 @@ class InventoryLog extends Model
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['product_id', 'type', 'qty', 'ref'];
+    protected $fillable = ['product_id', 'type', 'qty', 'ref', 'attachment'];
 
     public function product()
     {
