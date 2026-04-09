@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\InventoryLog;
 use App\Models\Product;
+use App\Exports\FinancialReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InventoryLogController extends Controller
 {
@@ -26,7 +28,7 @@ class InventoryLogController extends Controller
         if ($request->filled('product_name')) {
             $product = Product::firstOrCreate(
                 ['name' => $request->product_name],
-                ['sku' => 'AUTO-' . time(), 'price' => 0, 'stock' => $request->qty]
+                ['sku' => 'AUTO-' . time(), 'price' => 0, 'stock' => 0, 'supplier_price' => $request->unit_price ?? 0]
             );
             $productId = $product->id;
         } else {
@@ -64,5 +66,10 @@ class InventoryLogController extends Controller
         }
 
         return response()->json($log->load('product'), 201);
+    }
+
+    public function exportFinancialReport()
+    {
+        return Excel::download(new FinancialReportExport, 'financial_report.xlsx');
     }
 }
