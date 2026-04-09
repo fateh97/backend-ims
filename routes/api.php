@@ -16,6 +16,7 @@ Route::get('/logs', [InventoryLogController::class, 'index']);
 Route::post('/add-logs', [InventoryLogController::class, 'store']);
 Route::put('/update-product/{id}', [ProductController::class, 'update']);
 Route::delete('/delete-product/{id}', [ProductController::class, 'destroy']);
+Route::get('/export-financial-report', [InventoryLogController::class, 'exportFinancialReport']);
 
 Route::post('/reset-password', function (Request $request) {
     $validator = Validator::make($request->all(), [
