@@ -3,6 +3,7 @@
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\InventoryLogController;
+use App\Http\Controllers\UserController as ControllersUserController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -17,6 +18,7 @@ Route::post('/add-logs', [InventoryLogController::class, 'store']);
 Route::put('/update-product/{id}', [ProductController::class, 'update']);
 Route::delete('/delete-product/{id}', [ProductController::class, 'destroy']);
 Route::get('/export-financial-report', [InventoryLogController::class, 'exportFinancialReport']);
+Route::apiResource('users', ControllersUserController::class);
 
 Route::post('/reset-password', function (Request $request) {
     $validator = Validator::make($request->all(), [
@@ -24,7 +26,7 @@ Route::post('/reset-password', function (Request $request) {
         'password' => 'required|min:6|confirmed',
     ]);
 
-    if($validator->fails()) {
+    if ($validator->fails()) {
         return response()->json(['message' => 'Email not found or passwords do not match.'], 422);
     }
 
