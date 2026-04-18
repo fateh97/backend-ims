@@ -4,6 +4,8 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\InventoryLogController;
 use App\Http\Controllers\UserController as ControllersUserController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\InventoryTypeController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -19,6 +21,8 @@ Route::put('/update-product/{id}', [ProductController::class, 'update']);
 Route::delete('/delete-product/{id}', [ProductController::class, 'destroy']);
 Route::get('/export-financial-report', [InventoryLogController::class, 'exportFinancialReport']);
 Route::apiResource('users', ControllersUserController::class);
+Route::apiResource('brands', BrandController::class);
+Route::apiResource('inventory-types', InventoryTypeController::class);
 
 Route::post('/reset-password', function (Request $request) {
     $validator = Validator::make($request->all(), [

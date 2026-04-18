@@ -13,9 +13,21 @@ class Product extends Model
 
     protected $fillable = [
         'name',
+        'brand_id',
+        'inventory_type_id',
         'sku',
         'stock',
         'price',
         'supplier_price'
     ];
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class, 'brand_id', 'id');
+    }
+
+    public function inventoryTypes()
+    {
+        return $this->belongsTo(InventoryType::class, 'inventory_type_id', 'id');
+    }
 }

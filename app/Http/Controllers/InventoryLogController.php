@@ -27,7 +27,7 @@ class InventoryLogController extends Controller
         // Or just find it if you are using product_id
         if ($request->filled('product_name')) {
             $product = Product::firstOrCreate(
-                ['name' => $request->product_name],
+                ['name' => $request->product_name, 'brand_id' => $request->brand_id ?? null],
                 ['sku' => 'AUTO-' . time(), 'price' => 0, 'stock' => 0, 'supplier_price' => $request->unit_price ?? 0]
             );
             $productId = $product->id;
