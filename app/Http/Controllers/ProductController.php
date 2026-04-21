@@ -51,13 +51,13 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $product = Product::find($id);
-    
+
         if (!$product) {
             return response()->json(['message' => 'Product not found'], 404);
         }
 
         $product->delete();
-        
+
         return response()->json(['message' => 'Product deleted successfully']);
     }
 
@@ -66,7 +66,7 @@ class ProductController extends Controller
         $request->validate([
             'added_stock' => 'required|integer|min:1',
             'supplier_price' => 'required|numeric',
-            'attachment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'attachment' => 'file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         $product = Product::findOrFail($id);
@@ -74,10 +74,9 @@ class ProductController extends Controller
         $fileName = $request->file('attachment')->getClientOriginalName();
         $request->file('attachment')->move(public_path('uploads'), $fileName);
 
-        $product->increment('stock', $request->added_stock);
         $product->update([
             'stock' => $product->stock + $request->added_stock,
-            'supplier_price' => $request->supplier_price, 
+            'supplier_price' => $request->supplier_price,
         ]);
         // 3. Create Inventory Log
         InventoryLog::create([

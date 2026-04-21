@@ -18,6 +18,7 @@ Route::post('/add-products', [ProductController::class, 'store']);
 Route::post('/restock-product/{id}', [ProductController::class, 'restock']);
 Route::get('/logs', [InventoryLogController::class, 'index']);
 Route::post('/add-logs', [InventoryLogController::class, 'store']);
+Route::post('/customer-invoice', [InventoryLogController::class, 'customerInvoice']);
 Route::put('/update-product/{id}', [ProductController::class, 'update']);
 Route::delete('/delete-product/{id}', [ProductController::class, 'destroy']);
 Route::get('/export-financial-report', [InventoryLogController::class, 'exportFinancialReport']);
