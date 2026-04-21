@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 Route::post('/login', [LoginController::class, 'login']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::post('/add-products', [ProductController::class, 'store']);
+Route::post('/restock-product/{id}', [ProductController::class, 'restock']);
 Route::get('/logs', [InventoryLogController::class, 'index']);
 Route::post('/add-logs', [InventoryLogController::class, 'store']);
 Route::put('/update-product/{id}', [ProductController::class, 'update']);

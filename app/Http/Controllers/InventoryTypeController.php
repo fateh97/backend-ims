@@ -12,7 +12,7 @@ class InventoryTypeController extends Controller
     }
 
     public function store(Request $request) {
-        $data = $request->validate(['name' => 'required|unique:inventory_types|max:50']);
+        $data = $request->validate(['name' => 'required|unique:inventory_types|max:50', 'accessory' => 'nullable|boolean']);
         return InventoryType::create($data);
     }
 }
