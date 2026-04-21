@@ -11,12 +11,12 @@ class InventoryType extends Model
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'accessory'];
+    protected $fillable = ['name', 'accessory', 'prefix'];
 
     protected $casts = [
         'accessory' => 'boolean', // Update the cast as well
     ];
-    
+
     public function products()
     {
         return $this->hasMany(Product::class);
