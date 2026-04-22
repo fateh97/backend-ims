@@ -66,7 +66,7 @@ class ProductController extends Controller
         $request->validate([
             'added_stock' => 'required|integer|min:1',
             'supplier_price' => 'required|numeric',
-            'attachment' => 'file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'attachment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         $product = Product::findOrFail($id);

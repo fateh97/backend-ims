@@ -114,6 +114,6 @@ class InventoryLogController extends Controller
 
     public function exportFinancialReport()
     {
-        return Excel::download(new FinancialReportExport, 'financial_report.xlsx');
+        return Excel::download(new FinancialReportExport, 'WBM_Financial_Reports.xlsx');
     }
 }
