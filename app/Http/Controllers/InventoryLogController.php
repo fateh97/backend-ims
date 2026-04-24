@@ -12,13 +12,13 @@ class InventoryLogController extends Controller
 {
     public function index()
     {
-        return InventoryLog::with('product')->orderBy('created_at', 'desc')->get();
+        return InventoryLog::with('product.inventoryTypes')->orderBy('created_at', 'desc')->get();
     }
 
     public function customerInvoice(Request $request)
     {
         $request->validate([
-            'items' => 'array',
+            'items' => 'array', // Both Products and Accessories come in here
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.qty' => 'required|integer|min:1',
             'maintenance' => 'array',
@@ -29,17 +29,12 @@ class InventoryLogController extends Controller
 
         $items = $request->items ?? [];
         $maintenance = $request->maintenance ?? [];
-
-        if (empty($items) && empty($maintenance)) {
-            return response()->json(['message' => 'No items or services provided'], 422);
-        }
-
-        $reference = "";
+        
         if (count($items) === 1 && count($maintenance) === 0) {
             $product = Product::with('inventoryType')->find($items[0]['product_id']);
             $prefix = strtoupper($product->inventoryType->prefix ?? 'ITEM');
         } else {
-            $prefix = 'MUL';
+            $prefix = 'MULTI';
         }
 
         $count = InventoryLog::where('ref', 'like', $prefix . '-%')->count();
@@ -47,18 +42,16 @@ class InventoryLogController extends Controller
 
         foreach ($items as $itemData) {
             $product = Product::findOrFail($itemData['product_id']);
-
             InventoryLog::create([
                 'product_id' => $product->id,
                 'type'       => 'OUT',
                 'qty'        => $itemData['qty'],
                 'ref'        => $reference,
-                'attachment' => null,
             ]);
-
             $product->decrement('stock', $itemData['qty']);
         }
 
+        // Process Maintenance (Services)
         foreach ($maintenance as $service) {
             InventoryLog::create([
                 'product_id'    => null,
@@ -67,26 +60,19 @@ class InventoryLogController extends Controller
                 'ref'           => $reference,
                 'service_name'  => $service['desc'],
                 'service_price' => $service['price'],
-                'attachment'    => null,
             ]);
         }
 
-        return response()->json([
-            'message' => 'Transaction successful',
-            'ref' => $reference
-        ], 201);
+        return response()->json(['ref' => $reference], 201);
     }
 
     public function store(Request $request)
     {
-        // 1. Validate - make sure product_id and qty are actually there
         $request->validate([
             'qty' => 'required|integer',
             'type' => 'required|in:IN,OUT',
         ]);
 
-        // Handle Product (FirstOrCreate logic if you are using the Name approach)
-        // Or just find it if you are using product_id
         if ($request->filled('product_name')) {
             $product = Product::firstOrCreate(
                 ['name' => $request->product_name, 'brand_id' => $request->brand_id ?? null, 'inventory_type_id' => $request->inventory_type_id ?? null],
@@ -98,7 +84,6 @@ class InventoryLogController extends Controller
             $product = Product::findOrFail($productId);
         }
 
-        // 2. THE FIX: Only try to store if a file is present and valid
         $fileName = null;
 
         if ($request->hasFile('attachment')) {
@@ -111,13 +96,12 @@ class InventoryLogController extends Controller
             }
         }
 
-        // 3. Create Log
         $log = InventoryLog::create([
             'product_id' => $productId,
             'type'       => $request->type,
             'qty'        => $request->qty,
             'ref'        => $request->ref,
-            'attachment' => $fileName, // This will now safely be null if no file was uploaded
+            'attachment' => $fileName, 
         ]);
 
         // 4. Update Stock

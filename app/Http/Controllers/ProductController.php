@@ -10,7 +10,6 @@ class ProductController extends Controller
 {
     public function index()
     {
-
         $products = Product::with(['brand', 'inventoryTypes'])->get();
         return response()->json($products);
     }
