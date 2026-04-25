@@ -24,7 +24,6 @@ class InventoryTypeController extends Controller
 
         $data = $request->validate([
             'name' => 'required|unique:inventory_types,name,' . $id,
-            'prefix' => 'required|string|max:10',
             'accessory' => 'required|boolean'
         ]);
 
