@@ -31,8 +31,8 @@ class InventoryLogController extends Controller
         $maintenance = $request->maintenance ?? [];
         
         if (count($items) === 1 && count($maintenance) === 0) {
-            $product = Product::with('inventoryType')->find($items[0]['product_id']);
-            $prefix = strtoupper($product->inventoryType->prefix ?? 'ITEM');
+            $product = Product::with('inventoryTypes')->find($items[0]['product_id']);
+            $prefix = strtoupper($product->inventoryTypes->prefix ?? 'ITEM');
         } else {
             $prefix = 'MULTI';
         }
@@ -104,7 +104,6 @@ class InventoryLogController extends Controller
             'attachment' => $fileName, 
         ]);
 
-        // 4. Update Stock
         if ($request->type === 'OUT') {
             $product->decrement('stock', $request->qty);
         } else {
