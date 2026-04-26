@@ -45,11 +45,11 @@ class FinancialReportExport implements
 
     public function map($log): array
     {
-        $unitPrice = $log->product ? (float)$log->product->price : 0;
+        $unitPrice = $log->product ? (float)$log->product->price : (float)$log->service_price;
         return [
             $log->created_at->format('d/m/Y'),
             $log->ref,
-            $log->product ? $log->product->name : 'Deleted Product',
+            $log->product ? $log->product->name : $log->service_name,
             $log->qty,
             $unitPrice,
             $log->qty * $unitPrice
@@ -83,7 +83,7 @@ class FinancialReportExport implements
                 $lastRow = $highestRow + 1;
 
                 $totalRevenue = $this->collection()->reduce(function ($carry, $log) {
-                    return $carry + ($log->qty * ($log->product->price ?? 0));
+                    return $carry + ($log->qty * ($log->product->price ?? $log->service_price));
                 }, 0);
 
                 $event->sheet->setCellValue("E{$lastRow}", 'Grand Total:');
