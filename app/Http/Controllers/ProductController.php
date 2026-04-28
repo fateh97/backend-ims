@@ -65,13 +65,17 @@ class ProductController extends Controller
         $request->validate([
             'added_stock' => 'required|integer|min:1',
             'supplier_price' => 'required|numeric',
-            'attachment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         $product = Product::findOrFail($id);
 
-        $fileName = $request->file('attachment')->getClientOriginalName();
-        $request->file('attachment')->move(public_path('uploads'), $fileName);
+        $fileName = null;
+
+        if($request->hasFile('attachment')) {
+            $fileName = $request->file('attachment')->getClientOriginalName();
+            $request->file('attachment')->move(public_path('uploads'), $fileName);
+        }
 
         $product->update([
             'stock' => $product->stock + $request->added_stock,
