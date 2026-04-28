@@ -7,6 +7,7 @@ use App\Models\InventoryLog;
 use App\Models\Product;
 use App\Exports\FinancialReportExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 
 class InventoryLogController extends Controller
 {
@@ -18,7 +19,7 @@ class InventoryLogController extends Controller
     public function customerInvoice(Request $request)
     {
         $request->validate([
-            'items' => 'array', // Both Products and Accessories come in here
+            'items' => 'array',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.qty' => 'required|integer|min:1',
             'maintenance' => 'array',
@@ -29,41 +30,55 @@ class InventoryLogController extends Controller
 
         $items = $request->items ?? [];
         $maintenance = $request->maintenance ?? [];
-        
-        if (count($items) === 1 && count($maintenance) === 0) {
-            $product = Product::with('inventoryTypes')->find($items[0]['product_id']);
-            $prefix = strtoupper($product->inventoryTypes->prefix ?? 'ITEM');
-        } else {
-            $prefix = 'MULTI';
-        }
-
-        $count = InventoryLog::where('ref', 'like', $prefix . '-%')->count();
-        $reference = $prefix . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
 
         foreach ($items as $itemData) {
-            $product = Product::findOrFail($itemData['product_id']);
-            InventoryLog::create([
-                'product_id' => $product->id,
-                'type'       => 'OUT',
-                'qty'        => $itemData['qty'],
-                'ref'        => $reference,
-            ]);
-            $product->decrement('stock', $itemData['qty']);
+            $product = Product::find($itemData['product_id']);
+            if ($product->stock < $itemData['qty']) {
+                return response()->json([
+                    'message' => "Insufficient stock for {$product->name}. Current stock: {$product->stock}"
+                ], 422);
+            }
         }
 
-        // Process Maintenance (Services)
-        foreach ($maintenance as $service) {
-            InventoryLog::create([
-                'product_id'    => null,
-                'type'          => 'OUT',
-                'qty'           => 1,
-                'ref'           => $reference,
-                'service_name'  => $service['desc'],
-                'service_price' => $service['price'],
-            ]);
-        }
+        return DB::transaction(function () use ($items, $maintenance, $request) {
 
-        return response()->json(['ref' => $reference], 201);
+            if (count($items) === 1 && count($maintenance) === 0) {
+                $product = Product::with('inventoryTypes')->find($items[0]['product_id']);
+                $prefix = strtoupper($product->inventoryTypes->prefix ?? 'ITEM');
+            } else {
+                $prefix = 'MULTI';
+            }
+
+            $count = InventoryLog::where('ref', 'like', $prefix . '-%')->count();
+            $reference = $prefix . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+
+            // Process Physical Items
+            foreach ($items as $itemData) {
+                $product = Product::findOrFail($itemData['product_id']);
+
+                InventoryLog::create([
+                    'product_id' => $product->id,
+                    'type'       => 'OUT',
+                    'qty'        => $itemData['qty'],
+                    'ref'        => $reference,
+                ]);
+
+                $product->decrement('stock', $itemData['qty']);
+            }
+
+            foreach ($maintenance as $service) {
+                InventoryLog::create([
+                    'product_id'    => null,
+                    'type'          => 'OUT',
+                    'qty'           => 1,
+                    'ref'           => $reference,
+                    'service_name'  => $service['desc'],
+                    'service_price' => $service['price'],
+                ]);
+            }
+
+            return response()->json(['ref' => $reference], 201);
+        });
     }
 
     public function store(Request $request)
@@ -101,7 +116,7 @@ class InventoryLogController extends Controller
             'type'       => $request->type,
             'qty'        => $request->qty,
             'ref'        => $request->ref,
-            'attachment' => $fileName, 
+            'attachment' => $fileName,
         ]);
 
         if ($request->type === 'OUT') {
