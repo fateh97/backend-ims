@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -11,10 +11,10 @@ class InventoryLog extends Model
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['product_id', 'type', 'qty', 'ref', 'attachment', 'service_name', 'service_price'];
+    protected $fillable = ['product_name', 'type', 'qty', 'ref', 'attachment', 'created_by', 'service_name', 'service_price', 'accessory', 'supplier_price', 'price'];
 
-    public function product()
+    public function users()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

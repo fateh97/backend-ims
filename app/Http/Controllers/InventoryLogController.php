@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Exports\FinancialReportExport;
 use App\Models\InventoryLog;
 use App\Models\Product;
-use App\Exports\FinancialReportExport;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InventoryLogController extends Controller
 {
     public function index()
     {
-        return InventoryLog::with('product.inventoryTypes')->orderBy('created_at', 'desc')->get();
+        return InventoryLog::with('users')->orderBy('created_at', 'desc')->get();
     }
 
     public function customerInvoice(Request $request)
@@ -25,7 +25,7 @@ class InventoryLogController extends Controller
             'maintenance' => 'array',
             'maintenance.*.desc' => 'required|string',
             'maintenance.*.price' => 'required|numeric',
-            'type' => 'required|in:OUT'
+            'type' => 'required|in:OUT',
         ]);
 
         $items = $request->items ?? [];
@@ -35,12 +35,12 @@ class InventoryLogController extends Controller
             $product = Product::find($itemData['product_id']);
             if ($product->stock < $itemData['qty']) {
                 return response()->json([
-                    'message' => "Insufficient stock for {$product->name}. Current stock: {$product->stock}"
+                    'message' => "Insufficient stock for {$product->name}. Current stock: {$product->stock}",
                 ], 422);
             }
         }
 
-        return DB::transaction(function () use ($items, $maintenance, $request) {
+        return DB::transaction(function () use ($items, $maintenance) {
 
             if (count($items) === 1 && count($maintenance) === 0) {
                 $product = Product::with('inventoryTypes')->find($items[0]['product_id']);
@@ -49,8 +49,8 @@ class InventoryLogController extends Controller
                 $prefix = 'MULTI';
             }
 
-            $count = InventoryLog::where('ref', 'like', $prefix . '-%')->count();
-            $reference = $prefix . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+            $count = InventoryLog::where('ref', 'like', $prefix.'-%')->count();
+            $reference = $prefix.'-'.str_pad($count + 1, 4, '0', STR_PAD_LEFT);
 
             // Process Physical Items
             foreach ($items as $itemData) {
@@ -58,9 +58,9 @@ class InventoryLogController extends Controller
 
                 InventoryLog::create([
                     'product_id' => $product->id,
-                    'type'       => 'OUT',
-                    'qty'        => $itemData['qty'],
-                    'ref'        => $reference,
+                    'type' => 'OUT',
+                    'qty' => $itemData['qty'],
+                    'ref' => $reference,
                 ]);
 
                 $product->decrement('stock', $itemData['qty']);
@@ -68,11 +68,11 @@ class InventoryLogController extends Controller
 
             foreach ($maintenance as $service) {
                 InventoryLog::create([
-                    'product_id'    => null,
-                    'type'          => 'OUT',
-                    'qty'           => 1,
-                    'ref'           => $reference,
-                    'service_name'  => $service['desc'],
+                    'product_id' => null,
+                    'type' => 'OUT',
+                    'qty' => 1,
+                    'ref' => $reference,
+                    'service_name' => $service['desc'],
                     'service_price' => $service['price'],
                 ]);
             }
@@ -113,9 +113,9 @@ class InventoryLogController extends Controller
 
         $log = InventoryLog::create([
             'product_id' => $productId,
-            'type'       => $request->type,
-            'qty'        => $request->qty,
-            'ref'        => $request->ref,
+            'type' => $request->type,
+            'qty' => $request->qty,
+            'ref' => $request->ref,
             'attachment' => $fileName,
         ]);
 
