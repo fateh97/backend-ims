@@ -13,6 +13,10 @@ class InventoryLog extends Model
 
     protected $fillable = ['product_name', 'type', 'qty', 'ref', 'attachment', 'created_by', 'service_name', 'service_price', 'accessory', 'supplier_price', 'price'];
 
+     public function product(){
+        return $this->belongsTo(Product::class);
+     }
+
     public function users()
     {
         return $this->belongsTo(User::class, 'created_by');

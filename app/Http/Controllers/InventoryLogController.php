@@ -30,6 +30,7 @@ class InventoryLogController extends Controller
 
         $items = $request->items ?? [];
         $maintenance = $request->maintenance ?? [];
+        $user = $request->created_by;
 
         foreach ($items as $itemData) {
             $product = Product::find($itemData['product_id']);
@@ -40,7 +41,7 @@ class InventoryLogController extends Controller
             }
         }
 
-        return DB::transaction(function () use ($items, $maintenance) {
+        return DB::transaction(function () use ($items, $maintenance, $user) {
 
             if (count($items) === 1 && count($maintenance) === 0) {
                 $product = Product::with('inventoryTypes')->find($items[0]['product_id']);
@@ -57,10 +58,13 @@ class InventoryLogController extends Controller
                 $product = Product::findOrFail($itemData['product_id']);
 
                 InventoryLog::create([
-                    'product_id' => $product->id,
+                    'product_name' => $product->name,
                     'type' => 'OUT',
                     'qty' => $itemData['qty'],
-                    'ref' => $reference,
+                    'ref' => "Customer Invoice: $reference",
+                    'price' => $product->price,
+                    'created_by' => $user, 
+                    'accessory' => $product->inventoryTypes->accessory ?? 0
                 ]);
 
                 $product->decrement('stock', $itemData['qty']);
@@ -68,12 +72,13 @@ class InventoryLogController extends Controller
 
             foreach ($maintenance as $service) {
                 InventoryLog::create([
-                    'product_id' => null,
+                    'product_name' => null,
                     'type' => 'OUT',
                     'qty' => 1,
-                    'ref' => $reference,
+                    'ref' => "Service: $reference",
                     'service_name' => $service['desc'],
                     'service_price' => $service['price'],
+                    'created_by' => $user,
                 ]);
             }
 
@@ -88,17 +93,6 @@ class InventoryLogController extends Controller
             'type' => 'required|in:IN,OUT',
         ]);
 
-        if ($request->filled('product_name')) {
-            $product = Product::firstOrCreate(
-                ['name' => $request->product_name, 'brand_id' => $request->brand_id ?? null, 'inventory_type_id' => $request->inventory_type_id ?? null],
-                ['price' => 0, 'stock' => 0, 'supplier_price' => $request->unit_price ?? 0]
-            );
-            $productId = $product->id;
-        } else {
-            $productId = $request->product_id;
-            $product = Product::findOrFail($productId);
-        }
-
         $fileName = null;
 
         if ($request->hasFile('attachment')) {
@@ -111,12 +105,23 @@ class InventoryLogController extends Controller
             }
         }
 
+        if ($request->filled('product_name')) {
+            $product = Product::firstOrCreate(
+                ['name' => $request->product_name, 'brand_id' => $request->brand_id ?? null, 'inventory_type_id' => $request->inventory_type_id ?? null, 'attachment' => $fileName],
+                ['price' => 0, 'stock' => 0, 'supplier_price' => $request->unit_price ?? 0]
+            );
+            $productId = $product->id;
+        } 
+
         $log = InventoryLog::create([
-            'product_id' => $productId,
+            'product_name' => $request->product_name,
             'type' => $request->type,
             'qty' => $request->qty,
-            'ref' => $request->ref,
+            'ref' => 'Supplier Stock',
             'attachment' => $fileName,
+            'created_by' => $request->created_by,
+            'supplier_price' => $request->unit_price ?? 0,
+            'accessory' => $product->inventoryTypes->accessory ?? 0,
         ]);
 
         if ($request->type === 'OUT') {

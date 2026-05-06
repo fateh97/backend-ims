@@ -18,7 +18,8 @@ class Product extends Model
         'sku',
         'stock',
         'price',
-        'supplier_price'
+        'supplier_price',
+        'attachment'
     ];
 
     public function brand()
