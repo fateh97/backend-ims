@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InventoryLog;
 use App\Models\Brand;
+use App\Models\InventoryLog;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -67,14 +67,14 @@ class ProductController extends Controller
             'price' => 'Selling Price',
             'supplier_price' => 'Cost Price',
             'brand_id' => 'Brand',
-            'inventory_type_id' => 'Category Type'
+            'inventory_type_id' => 'Category Type',
         ];
 
         // 2. Fill the model to detect changes
         $product->fill($data);
         $changes = $product->getDirty();
 
-        if (!empty($changes)) {
+        if (! empty($changes)) {
             $summary = [];
 
             foreach ($changes as $field => $newValue) {
@@ -85,6 +85,7 @@ class ProductController extends Controller
                     $oldBrand = Brand::find($oldValue)->name ?? 'None';
                     $newBrand = Brand::find($newValue)->name ?? 'None';
                     $summary[] = "$fieldName: $oldBrand → $newBrand";
+
                     continue; // Skip the rest of the loop for this field
                 }
 
@@ -92,18 +93,19 @@ class ProductController extends Controller
                     $oldType = InventoryType::find($oldValue)->name ?? 'None';
                     $newType = InventoryType::find($newValue)->name ?? 'None';
                     $summary[] = "$fieldName: $oldType → $newType";
+
                     continue;
                 }
 
                 if (str_contains($field, 'price')) {
-                    $oldValue = 'RM' . number_format($oldValue, 2);
-                    $newValue = 'RM' . number_format($newValue, 2);
+                    $oldValue = 'RM'.number_format($oldValue, 2);
+                    $newValue = 'RM'.number_format($newValue, 2);
                 }
 
                 $summary[] = "$fieldName: $oldValue → $newValue";
             }
 
-            $reference = "Modified: " . implode(' | ', $summary);
+            $reference = 'Modified: '.implode(' | ', $summary);
 
             // 3. Create the Log
             InventoryLog::create([
@@ -126,7 +128,7 @@ class ProductController extends Controller
         // 1. Find the product and its relationship
         $product = Product::with('inventoryTypes')->find($id);
 
-        if (!$product) {
+        if (! $product) {
             return response()->json(['message' => 'Product not found'], 404);
         }
 
@@ -140,14 +142,13 @@ class ProductController extends Controller
             // 3. Create the Log using product_name
             InventoryLog::create([
                 'product_name' => $pName, // Storing name as a string
-                'type'         => 'DELETE',
-                'ref'          => "Permanent Deletion: " . $pName,
-                'qty'          => $product->stock,
+                'type' => 'DELETE',
+                'ref' => 'Permanent Deletion: '.$pName,
+                'qty' => $product->stock,
                 'supplier_price' => $product->supplier_price,
-                'price'        => $product->price,
-                'created_by'   => $userId,
-                'qty'          => 0,
-                'accessory'    => $isAccessory,
+                'price' => $product->price,
+                'created_by' => $userId,
+                'accessory' => $isAccessory,
             ]);
 
             // 4. Delete the product
@@ -159,7 +160,7 @@ class ProductController extends Controller
             // Return the exact error if it fails again
             return response()->json([
                 'message' => 'Log creation or deletion failed',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
