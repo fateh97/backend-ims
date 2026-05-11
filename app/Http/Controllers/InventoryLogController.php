@@ -50,8 +50,19 @@ class InventoryLogController extends Controller
                 $prefix = 'MULTI';
             }
 
-            $count = InventoryLog::where('ref', 'like', $prefix.'-%')->count();
-            $reference = $prefix.'-'.str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+            $latestLog = InventoryLog::where('ref', 'like', '%'.$prefix.'-%')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($latestLog) {
+                $parts = explode('-', $latestLog->ref);
+                $lastNumber = (int) end($parts);
+                $nextNumber = $lastNumber + 1;
+            } else {
+                $nextNumber = 1;
+            }
+
+            $reference = $prefix.'-'.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
             // Process Physical Items
             foreach ($items as $itemData) {
@@ -63,8 +74,8 @@ class InventoryLogController extends Controller
                     'qty' => $itemData['qty'],
                     'ref' => "Customer Invoice: $reference",
                     'price' => $product->price,
-                    'created_by' => $user, 
-                    'accessory' => $product->inventoryTypes->accessory ?? 0
+                    'created_by' => $user,
+                    'accessory' => $product->inventoryTypes->accessory ?? 0,
                 ]);
 
                 $product->decrement('stock', $itemData['qty']);
@@ -111,7 +122,7 @@ class InventoryLogController extends Controller
                 ['price' => 0, 'stock' => 0, 'supplier_price' => $request->unit_price ?? 0]
             );
             $productId = $product->id;
-        } 
+        }
 
         $log = InventoryLog::create([
             'product_name' => $request->product_name,
