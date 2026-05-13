@@ -115,6 +115,8 @@ class ProductController extends Controller
                 'ref' => $reference,
                 'created_by' => $data['created_by'],
                 'accessory' => $product->inventoryTypes->accessory ?? 0,
+                'supplier_price' => $request->supplier_price,
+                'price' => $request->price
             ]);
 
             $product->save();
